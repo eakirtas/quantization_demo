@@ -5,6 +5,7 @@ GTAGS
 exports/
 datasets/
 extras/
+data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
