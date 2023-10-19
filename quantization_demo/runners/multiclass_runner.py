@@ -2,12 +2,14 @@ from typing import Tuple
 
 import numpy as np
 import torch as T
-from train_utils.runners.runner import Runner
+
+from .runner import Runner
 
 DEVICE = T.device("cuda:0" if T.cuda.is_available() else "cpu")
 
 
 class MulticlassRunner(Runner):
+
     def __init__(self,
                  criterion=T.nn.NLLLoss,
                  device=DEVICE,
@@ -31,6 +33,7 @@ class MulticlassRunner(Runner):
 
 
 class ImbalanceMulticlassRunner(MulticlassRunner):
+
     def __init__(self,
                  criterion=T.nn.NLLLoss,
                  device=DEVICE,
@@ -88,3 +91,34 @@ class ImbalanceMulticlassRunner(MulticlassRunner):
                 final_loss, final_accuracy))
 
         return final_loss, final_accuracy, acc_target, acc_pred
+
+
+class QuantRunner(MulticlassRunner):
+
+    def __init__(self,
+                 criterion=T.nn.NLLLoss,
+                 device=DEVICE,
+                 gradient_clipping=None,
+                 scheduler=None,
+                 q_scheduler=None):
+        super().__init__(
+            criterion=criterion,
+            device=device,
+            gradient_clipping=gradient_clipping,
+            scheduler=scheduler,
+        )
+
+        self.q_scheduler = q_scheduler
+
+    def run_epoch(self,
+                  model: T.nn.Module,
+                  optimizer: T.optim.Optimizer,
+                  train_dataloader: T.utils.data.DataLoader,
+                  type=T.cuda.FloatTensor):
+        loss, accuracy = super().run_epoch(model, optimizer, train_dataloader,
+                                           type)
+
+        if self.q_scheduler is not None:
+            self.q_scheduler.step(model)
+
+        return loss, accuracy

@@ -9,6 +9,7 @@ DEVICE = T.device("cuda:0" if T.cuda.is_available() else "cpu")
 
 
 class Runner(ABC):
+
     def __init__(self,
                  criterion,
                  device=DEVICE,
@@ -24,6 +25,7 @@ class Runner(ABC):
                   optimizer: T.optim.Optimizer,
                   train_dataloader: T.utils.data.DataLoader,
                   type=T.cuda.FloatTensor):
+        model.train()
         running_loss, running_accuracy, total = 0.0, 0.0, 0.0
 
         for inputs, target in train_dataloader:

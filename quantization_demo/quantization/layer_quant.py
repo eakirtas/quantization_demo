@@ -1,8 +1,10 @@
 import torch as T
-from pnn_library.quantize.quantize_v2.ste_quant import FakeQuant, QTensor
+
+from .ste_quant import FakeQuant, QTensor
 
 
 class Dequantize():
+
     def __call__(self, x):
         if isinstance(x, QTensor):
             return x.o_tensor
@@ -11,6 +13,7 @@ class Dequantize():
 
 
 class LayerQuantWrap(T.nn.Module):
+
     def __init__(self, layer: T.nn.Module, is_quant, num_bits, stat_lambda):
         super().__init__()
 
@@ -65,7 +68,7 @@ class LayerQuantWrap(T.nn.Module):
                 self.q_bias, self.q_weight = None, None
 
     def set_bits(self, num_bits):
-        self.num_bits = num_bits
+        self.num_bits = T.tensor(num_bits)
 
         if self.q_bias is not None:
             self.q_bias.set_bits(num_bits)

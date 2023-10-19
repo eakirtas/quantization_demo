@@ -4,13 +4,14 @@ DEVICE = T.device("cuda:0" if T.cuda.is_available() else "cpu")
 
 
 class QTensor(T.nn.Module):
+
     @T.no_grad()
     def __init__(self, param: T.Tensor, stats, num_bits: int):
         super().__init__()
 
         self.stats = stats
 
-        self.register_buffer('num_bits', num_bits)
+        self.register_buffer('num_bits', T.tensor(num_bits)).to(DEVICE)
 
         self.register_buffer('q_min', T.empty((1, )).to(DEVICE))
         self.register_buffer('q_max', T.empty((1, )).to(DEVICE))
@@ -42,14 +43,14 @@ class QTensor(T.nn.Module):
 
     @T.no_grad()
     def set_bits(self, num_bits):
-        self.num_bits = num_bits
+        self.num_bits = T.tensor(num_bits)
         self.q_min, self.q_max = self.get_q(num_bits)
 
     @T.no_grad()
     def get_q(self, num_bits):
 
-        self.q_min = T.tensor(0.)
-        self.q_max = T.tensor(2.**num_bits - 1.)
+        self.q_min = T.tensor(0.).to(DEVICE)
+        self.q_max = 2.**num_bits - 1
 
         return self.q_min, self.q_max
 
@@ -83,6 +84,7 @@ class QTensor(T.nn.Module):
 
 
 class DequantizeTensor(T.autograd.Function):
+
     @staticmethod
     def forward(ctx, x, x_q):
         return x_q.scale * (x.float() - x_q.zeropoint)
@@ -93,6 +95,7 @@ class DequantizeTensor(T.autograd.Function):
 
 
 class QuantizeTensor(T.autograd.Function):
+
     @staticmethod
     def forward(ctx, x, x_q):
         q_x = (x_q.zeropoint + x / x_q.scale)
@@ -105,6 +108,7 @@ class QuantizeTensor(T.autograd.Function):
 
 
 class Calculate(T.autograd.Function):
+
     @staticmethod
     def forward(ctx, x, x_q: QTensor):
         vmin, vmax = x_q.stats(x)
@@ -123,6 +127,7 @@ class Calculate(T.autograd.Function):
 
 
 class FakeQuant(T.autograd.Function):
+
     @staticmethod
     def forward(ctx, x, x_q: QTensor):
 
