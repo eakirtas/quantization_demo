@@ -11,7 +11,7 @@ class QTensor(T.nn.Module):
 
         self.stats = stats
 
-        self.register_buffer('num_bits', T.tensor(num_bits)).to(DEVICE)
+        self.register_buffer('num_bits', T.tensor(num_bits).to(DEVICE))
 
         self.register_buffer('q_min', T.empty((1, )).to(DEVICE))
         self.register_buffer('q_max', T.empty((1, )).to(DEVICE))

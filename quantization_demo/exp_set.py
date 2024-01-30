@@ -24,12 +24,12 @@ SIMPLE_QUANTIZATION_METHODS = {
     #     'stats_lmbd': MovingAverage,
     #     'q_scheduler': None
     # },
-    'quantization_aware': {
-        'train_quant': True,
-        'eval_quant': True,
-        'stats_lmbd': MovingAverage,
-        'q_scheduler': None
-    },
+    # 'quantization_aware': {
+    #     'train_quant': True,
+    #     'eval_quant': True,
+    #     'stats_lmbd': MovingAverage,
+    #     'q_scheduler': None
+    # },
     'std_quant_aware': {
         'train_quant': True,
         'eval_quant': True,
@@ -111,8 +111,14 @@ def run_resnet(config):
 
     model = ResNet8(config)
 
-    runner = QuantRunner(T.nn.CrossEntropyLoss(),
-                         q_scheduler=config['q_scheduler'](model, config))
+    q_scheduler = None
+    if config['q_scheduler'] is not None:
+        q_scheduler = config['q_scheduler'](model, config)
+
+    runner = QuantRunner(
+        T.nn.CrossEntropyLoss(),
+        q_scheduler=q_scheduler,
+    )
 
     optimizer = T.optim.RMSprop(model.parameters(), lr=config['lr'])
 
@@ -132,9 +138,10 @@ def run_resnet(config):
 
 
 BITS = 8
-for q_method, q_dict in MIXED_QUANTIZATION_METHODS.items():
+for q_method, q_dict in SIMPLE_QUANTIZATION_METHODS.items():
     print('Running for method {}...'.format(q_method))
     q_dict['init_bits'] = BITS
+    q_dict['bits'] = BITS
 
     config = CONFIG.copy()
     config.update(q_dict)
